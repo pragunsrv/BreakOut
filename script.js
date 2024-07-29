@@ -10,7 +10,7 @@ let dy = -2;
 
 // Paddle properties
 const paddleHeight = 10;
-let paddleWidth = 75; // Made this variable to allow changes
+let paddleWidth = 75; 
 let paddleX = (canvas.width - paddleWidth) / 2;
 let rightPressed = false;
 let leftPressed = false;
@@ -39,19 +39,35 @@ function getRandomColor() {
 
 // Power-up properties
 const powerUpRadius = 10;
-let powerUp = null;
+let powerUps = [];
+const powerUpTypes = ["expandPaddle", "extraLife", "slowBall"];
 
 function createPowerUp() {
     const randomColumn = Math.floor(Math.random() * brickColumnCount);
     const randomRow = Math.floor(Math.random() * brickRowCount);
     const brick = bricks[randomColumn][randomRow];
     if (brick.status === 1) {
-        powerUp = {
+        const type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+        powerUps.push({
             x: brick.x + brickWidth / 2,
             y: brick.y + brickHeight / 2,
+            radius: powerUpRadius,
+            type: type,
             status: 1
-        };
+        });
         brick.status = 0; // Remove brick that spawned power-up
+    }
+}
+
+function applyPowerUp(powerUp) {
+    if (powerUp.type === "expandPaddle") {
+        paddleWidth += 20;
+    } else if (powerUp.type === "extraLife") {
+        // Increase player lives
+        lives += 1;
+    } else if (powerUp.type === "slowBall") {
+        dx *= 0.8;
+        dy *= 0.8;
     }
 }
 
@@ -97,12 +113,14 @@ function collisionDetection() {
             }
         }
     }
-    if (powerUp && powerUp.status === 1) {
-        if (x > powerUp.x - powerUpRadius && x < powerUp.x + powerUpRadius &&
-            y > powerUp.y - powerUpRadius && y < powerUp.y + powerUpRadius) {
-            // Example power-up effect: Increase paddle width
-            paddleWidth += 20;
-            powerUp.status = 0;
+    for (let i = 0; i < powerUps.length; i++) {
+        const powerUp = powerUps[i];
+        if (powerUp.status === 1) {
+            if (x > powerUp.x - powerUp.radius && x < powerUp.x + powerUp.radius &&
+                y > powerUp.y - powerUp.radius && y < powerUp.y + powerUp.radius) {
+                applyPowerUp(powerUp);
+                powerUp.status = 0;
+            }
         }
     }
 }
@@ -144,23 +162,47 @@ function drawBricks() {
     }
 }
 
-// Draw power-up
-function drawPowerUp() {
-    if (powerUp && powerUp.status === 1) {
-        ctx.beginPath();
-        ctx.arc(powerUp.x, powerUp.y, powerUpRadius, 0, Math.PI * 2);
-        ctx.fillStyle = "#FFD700";
-        ctx.fill();
-        ctx.closePath();
+// Draw power-ups
+function drawPowerUps() {
+    for (let i = 0; i < powerUps.length; i++) {
+        const powerUp = powerUps[i];
+        if (powerUp.status === 1) {
+            ctx.beginPath();
+            ctx.arc(powerUp.x, powerUp.y, powerUp.radius, 0, Math.PI * 2);
+            ctx.fillStyle = getPowerUpColor(powerUp.type);
+            ctx.fill();
+            ctx.closePath();
+        }
+    }
+}
+
+function getPowerUpColor(type) {
+    switch (type) {
+        case "expandPaddle":
+            return "#FFD700";
+        case "extraLife":
+            return "#FF6347";
+        case "slowBall":
+            return "#32CD32";
+        default:
+            return "#FFFFFF";
     }
 }
 
 // Draw score
 let score = 0;
+let lives = 3;
+
 function drawScore() {
     ctx.font = "16px Arial";
     ctx.fillStyle = "#FFF";
     ctx.fillText("Score: " + score, 8, 20);
+}
+
+function drawLives() {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#FFF";
+    ctx.fillText("Lives: " + lives, canvas.width - 65, 20);
 }
 
 // Draw everything
@@ -169,8 +211,9 @@ function draw() {
     drawBricks();
     drawBall();
     drawPaddle();
-    drawPowerUp();
+    drawPowerUps();
     drawScore();
+    drawLives();
     collisionDetection();
 
     if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
@@ -182,7 +225,14 @@ function draw() {
         if (x > paddleX && x < paddleX + paddleWidth) {
             dy = -dy;
         } else {
-            document.location.reload();
+            lives--;
+            if (lives <= 0) {
+                alert("GAME OVER");
+                document.location.reload();
+            } else {
+                resetBall();
+                resetPaddle();
+            }
         }
     }
 
@@ -195,6 +245,18 @@ function draw() {
     x += dx;
     y += dy;
     requestAnimationFrame(draw);
+}
+
+function resetBall() {
+    x = canvas.width / 2;
+    y = canvas.height - 30;
+    dx = 2;
+    dy = -2;
+}
+
+function resetPaddle() {
+    paddleWidth = 75;
+    paddleX = (canvas.width - paddleWidth) / 2;
 }
 
 draw();

@@ -1,21 +1,18 @@
 body {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: #000;
-}
-
-canvas {
-    background: #000;
-    border: 1px solid #fff;
-}
-
-#game-info {
+    background-color: #333;
     color: #FFF;
     font-family: Arial, sans-serif;
     text-align: center;
-    margin-bottom: 10px;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    color: #FFF;
+    margin-top: 20px;
+}
+
+canvas {
+    border: 2px solid #FFF;
+    background-color: #000;
 }
