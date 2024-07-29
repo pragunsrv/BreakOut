@@ -24,7 +24,7 @@ const brickPadding = 10;
 const brickOffsetTop = 30;
 const brickOffsetLeft = 30;
 const brickColors = ["#0095DD", "#FF5733", "#33FF57", "#FF33A1", "#33A1FF"];
-const brickTypes = ["normal", "explosive", "doubleScore", "multiHit"];
+const brickTypes = ["normal", "explosive", "doubleScore", "multiHit", "bonusLife", "speedBall"];
 let bricks = [];
 
 // Game variables
@@ -32,8 +32,9 @@ let score = 0;
 let lives = 3;
 const powerUpRadius = 10;
 let powerUps = [];
-const powerUpTypes = ["expandPaddle", "extraLife", "slowBall", "speedBall", "multiBall"];
+const powerUpTypes = ["expandPaddle", "extraLife", "slowBall", "speedBall", "multiBall", "bonusLife"];
 const additionalBalls = [];
+const bonusPoints = 50; // New feature: bonus points
 
 // Initialize bricks
 for (let c = 0; c < brickColumnCount; c++) {
@@ -84,6 +85,9 @@ function applyPowerUp(powerUp) {
         dy *= 1.2;
     } else if (powerUp.type === "multiBall") {
         createAdditionalBalls();
+    } else if (powerUp.type === "bonusLife") {
+        lives += 1;
+        score += bonusPoints;
     }
 }
 
@@ -249,7 +253,7 @@ function drawPowerUps() {
             ctx.beginPath();
             ctx.arc(powerUp.x, powerUp.y, powerUp.radius, 0, Math.PI * 2);
             if (powerUp.type === "expandPaddle") {
-                ctx.fillStyle = "red";
+                ctx.fillStyle = "yellow";
             } else if (powerUp.type === "extraLife") {
                 ctx.fillStyle = "green";
             } else if (powerUp.type === "slowBall") {
@@ -258,6 +262,8 @@ function drawPowerUps() {
                 ctx.fillStyle = "orange";
             } else if (powerUp.type === "multiBall") {
                 ctx.fillStyle = "purple";
+            } else if (powerUp.type === "bonusLife") {
+                ctx.fillStyle = "pink";
             }
             ctx.fill();
             ctx.closePath();
