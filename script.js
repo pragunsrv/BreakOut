@@ -34,7 +34,8 @@ const powerUpRadius = 10;
 let powerUps = [];
 const powerUpTypes = ["expandPaddle", "extraLife", "slowBall", "speedBall", "multiBall", "bonusLife"];
 const additionalBalls = [];
-const bonusPoints = 50; // New feature: bonus points
+const bonusPoints = 50;
+const ballTrail = []; // New feature: ball trail effect
 
 // Initialize bricks
 for (let c = 0; c < brickColumnCount; c++) {
@@ -100,6 +101,14 @@ function createAdditionalBalls() {
             dx: (Math.random() - 0.5) * 2,
             dy: -2
         });
+    }
+}
+
+// Create ball trail effect
+function createBallTrail() {
+    ballTrail.push({ x: x, y: y, alpha: 1.0 });
+    if (ballTrail.length > 10) {
+        ballTrail.shift(); // Keep the trail length fixed
     }
 }
 
@@ -285,6 +294,19 @@ function drawLives() {
     ctx.fillText("Lives: " + lives, canvas.width - 65, 20);
 }
 
+// Draw ball trail
+function drawBallTrail() {
+    for (let i = 0; i < ballTrail.length; i++) {
+        const trail = ballTrail[i];
+        ctx.beginPath();
+        ctx.arc(trail.x, trail.y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(0, 149, 221, ${trail.alpha})`;
+        ctx.fill();
+        ctx.closePath();
+        trail.alpha -= 0.1; // Fade effect
+    }
+}
+
 // Update game state and draw
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -293,6 +315,7 @@ function draw() {
     drawAdditionalBalls();
     drawPaddle();
     drawPowerUps();
+    drawBallTrail();
     drawScore();
     drawLives();
     collisionDetection();
@@ -325,6 +348,7 @@ function draw() {
 
     x += dx;
     y += dy;
+    createBallTrail(); // Add trail effect
     requestAnimationFrame(draw);
 }
 
