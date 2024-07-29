@@ -1,18 +1,14 @@
 body {
-    background-color: #333;
-    color: #FFF;
-    font-family: Arial, sans-serif;
-    text-align: center;
     margin: 0;
     padding: 0;
-}
-
-h1 {
-    color: #FFF;
-    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #000;
 }
 
 canvas {
-    border: 2px solid #FFF;
-    background-color: #000;
+    border: 2px solid #fff;
+    background: #111;
 }

@@ -7,11 +7,10 @@ let x = canvas.width / 2;
 let y = canvas.height - 30;
 let dx = 2;
 let dy = -2;
-const ballSpeedIncrement = 0.1; // Increment speed after every few bricks
 
 // Paddle properties
 const paddleHeight = 10;
-let paddleWidth = 75; 
+let paddleWidth = 75;
 let paddleX = (canvas.width - paddleWidth) / 2;
 let rightPressed = false;
 let leftPressed = false;
@@ -25,15 +24,24 @@ const brickPadding = 10;
 const brickOffsetTop = 30;
 const brickOffsetLeft = 30;
 const brickColors = ["#0095DD", "#FF5733", "#33FF57", "#FF33A1", "#33A1FF"];
-let brickTypes = [];
+const brickTypes = ["normal", "explosive", "doubleScore", "multiHit"];
+let bricks = [];
 
-const bricks = [];
+// Game variables
+let score = 0;
+let lives = 3;
+const powerUpRadius = 10;
+let powerUps = [];
+const powerUpTypes = ["expandPaddle", "extraLife", "slowBall", "speedBall", "multiBall"];
+const additionalBalls = [];
+
+// Initialize bricks
 for (let c = 0; c < brickColumnCount; c++) {
     bricks[c] = [];
     for (let r = 0; r < brickRowCount; r++) {
         const color = getRandomColor();
         const type = getRandomBrickType();
-        bricks[c][r] = { x: 0, y: 0, status: 1, color: color, type: type };
+        bricks[c][r] = { x: 0, y: 0, status: 1, color: color, type: type, hits: type === "multiHit" ? 3 : 1 };
     }
 }
 
@@ -42,15 +50,10 @@ function getRandomColor() {
 }
 
 function getRandomBrickType() {
-    const types = ["normal", "explosive", "doubleScore"];
-    return types[Math.floor(Math.random() * types.length)];
+    return brickTypes[Math.floor(Math.random() * brickTypes.length)];
 }
 
-// Power-up properties
-const powerUpRadius = 10;
-let powerUps = [];
-const powerUpTypes = ["expandPaddle", "extraLife", "slowBall", "speedBall"];
-
+// Create power-ups
 function createPowerUp() {
     const randomColumn = Math.floor(Math.random() * brickColumnCount);
     const randomRow = Math.floor(Math.random() * brickRowCount);
@@ -79,6 +82,20 @@ function applyPowerUp(powerUp) {
     } else if (powerUp.type === "speedBall") {
         dx *= 1.2;
         dy *= 1.2;
+    } else if (powerUp.type === "multiBall") {
+        createAdditionalBalls();
+    }
+}
+
+// Create additional balls
+function createAdditionalBalls() {
+    for (let i = 0; i < 2; i++) {
+        additionalBalls.push({
+            x: x,
+            y: y,
+            dx: (Math.random() - 0.5) * 2,
+            dy: -2
+        });
     }
 }
 
@@ -115,13 +132,16 @@ function collisionDetection() {
                     y < b.y + brickHeight
                 ) {
                     dy = -dy;
-                    b.status = 0;
-                    score += 10;
-                    if (b.type === "explosive") {
-                        destroyNearbyBricks(c, r);
-                    }
-                    if (Math.random() < 0.1) { // 10% chance to spawn a power-up
-                        createPowerUp();
+                    b.hits -= 1;
+                    if (b.hits <= 0) {
+                        b.status = 0;
+                        score += 10;
+                        if (b.type === "explosive") {
+                            destroyNearbyBricks(c, r);
+                        }
+                        if (Math.random() < 0.1) { // 10% chance to spawn a power-up
+                            createPowerUp();
+                        }
                     }
                 }
             }
@@ -136,6 +156,25 @@ function collisionDetection() {
                 powerUp.status = 0;
             }
         }
+    }
+    for (let i = 0; i < additionalBalls.length; i++) {
+        const ball = additionalBalls[i];
+        if (ball.x + ball.dx > canvas.width - ballRadius || ball.x + ball.dx < ballRadius) {
+            ball.dx = -ball.dx;
+        }
+        if (ball.y + ball.dy < ballRadius) {
+            ball.dy = -ball.dy;
+        } else if (ball.y + ball.dy > canvas.height - ballRadius) {
+            if (ball.x > paddleX && ball.x < paddleX + paddleWidth) {
+                ball.dy = -ball.dy;
+            } else {
+                additionalBalls.splice(i, 1);
+                i--;
+            }
+        }
+
+        ball.x += ball.dx;
+        ball.y += ball.dy;
     }
 }
 
@@ -160,6 +199,18 @@ function drawBall() {
     ctx.fillStyle = "#0095DD";
     ctx.fill();
     ctx.closePath();
+}
+
+// Draw additional balls
+function drawAdditionalBalls() {
+    for (let i = 0; i < additionalBalls.length; i++) {
+        const ball = additionalBalls[i];
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#0095DD";
+        ctx.fill();
+        ctx.closePath();
+    }
 }
 
 // Draw paddle
@@ -197,49 +248,43 @@ function drawPowerUps() {
         if (powerUp.status === 1) {
             ctx.beginPath();
             ctx.arc(powerUp.x, powerUp.y, powerUp.radius, 0, Math.PI * 2);
-            ctx.fillStyle = getPowerUpColor(powerUp.type);
+            if (powerUp.type === "expandPaddle") {
+                ctx.fillStyle = "red";
+            } else if (powerUp.type === "extraLife") {
+                ctx.fillStyle = "green";
+            } else if (powerUp.type === "slowBall") {
+                ctx.fillStyle = "blue";
+            } else if (powerUp.type === "speedBall") {
+                ctx.fillStyle = "orange";
+            } else if (powerUp.type === "multiBall") {
+                ctx.fillStyle = "purple";
+            }
             ctx.fill();
             ctx.closePath();
         }
     }
 }
 
-function getPowerUpColor(type) {
-    switch (type) {
-        case "expandPaddle":
-            return "#FFD700";
-        case "extraLife":
-            return "#FF6347";
-        case "slowBall":
-            return "#32CD32";
-        case "speedBall":
-            return "#1E90FF";
-        default:
-            return "#FFFFFF";
-    }
-}
-
 // Draw score
-let score = 0;
-let lives = 3;
-
 function drawScore() {
     ctx.font = "16px Arial";
     ctx.fillStyle = "#FFF";
     ctx.fillText("Score: " + score, 8, 20);
 }
 
+// Draw lives
 function drawLives() {
     ctx.font = "16px Arial";
     ctx.fillStyle = "#FFF";
     ctx.fillText("Lives: " + lives, canvas.width - 65, 20);
 }
 
-// Draw everything
+// Update game state and draw
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBricks();
     drawBall();
+    drawAdditionalBalls();
     drawPaddle();
     drawPowerUps();
     drawScore();
