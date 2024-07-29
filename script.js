@@ -35,17 +35,24 @@ let powerUps = [];
 const powerUpTypes = ["expandPaddle", "extraLife", "slowBall", "speedBall", "multiBall", "bonusLife"];
 const additionalBalls = [];
 const bonusPoints = 50;
-const ballTrail = []; // New feature: ball trail effect
+const ballTrail = [];
+let level = 1; // New feature: levels
+const maxLevels = 3;
 
 // Initialize bricks
-for (let c = 0; c < brickColumnCount; c++) {
-    bricks[c] = [];
-    for (let r = 0; r < brickRowCount; r++) {
-        const color = getRandomColor();
-        const type = getRandomBrickType();
-        bricks[c][r] = { x: 0, y: 0, status: 1, color: color, type: type, hits: type === "multiHit" ? 3 : 1 };
+function initializeBricks() {
+    bricks = [];
+    for (let c = 0; c < brickColumnCount; c++) {
+        bricks[c] = [];
+        for (let r = 0; r < brickRowCount; r++) {
+            const color = getRandomColor();
+            const type = getRandomBrickType();
+            bricks[c][r] = { x: 0, y: 0, status: 1, color: color, type: type, hits: type === "multiHit" ? 3 : 1 };
+        }
     }
 }
+
+initializeBricks();
 
 function getRandomColor() {
     return brickColors[Math.floor(Math.random() * brickColors.length)];
@@ -69,7 +76,7 @@ function createPowerUp() {
             type: type,
             status: 1
         });
-        brick.status = 0; // Remove brick that spawned power-up
+        brick.status = 0;
     }
 }
 
@@ -108,7 +115,7 @@ function createAdditionalBalls() {
 function createBallTrail() {
     ballTrail.push({ x: x, y: y, alpha: 1.0 });
     if (ballTrail.length > 10) {
-        ballTrail.shift(); // Keep the trail length fixed
+        ballTrail.shift();
     }
 }
 
@@ -138,12 +145,7 @@ function collisionDetection() {
         for (let r = 0; r < brickRowCount; r++) {
             const b = bricks[c][r];
             if (b.status === 1) {
-                if (
-                    x > b.x &&
-                    x < b.x + brickWidth &&
-                    y > b.y &&
-                    y < b.y + brickHeight
-                ) {
+                if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
                     dy = -dy;
                     b.hits -= 1;
                     if (b.hits <= 0) {
@@ -152,7 +154,7 @@ function collisionDetection() {
                         if (b.type === "explosive") {
                             destroyNearbyBricks(c, r);
                         }
-                        if (Math.random() < 0.1) { // 10% chance to spawn a power-up
+                        if (Math.random() < 0.1) {
                             createPowerUp();
                         }
                     }
@@ -163,8 +165,7 @@ function collisionDetection() {
     for (let i = 0; i < powerUps.length; i++) {
         const powerUp = powerUps[i];
         if (powerUp.status === 1) {
-            if (x > powerUp.x - powerUp.radius && x < powerUp.x + powerUp.radius &&
-                y > powerUp.y - powerUp.radius && y < powerUp.y + powerUp.radius) {
+            if (x > powerUp.x - powerUp.radius && x < powerUp.x + powerUp.radius && y > powerUp.y - powerUp.radius && y < powerUp.y + powerUp.radius) {
                 applyPowerUp(powerUp);
                 powerUp.status = 0;
             }
