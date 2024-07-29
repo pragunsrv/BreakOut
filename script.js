@@ -36,8 +36,15 @@ const powerUpTypes = ["expandPaddle", "extraLife", "slowBall", "speedBall", "mul
 const additionalBalls = [];
 const bonusPoints = 50;
 const ballTrail = [];
-let level = 1; // New feature: levels
+let level = 1;
 const maxLevels = 3;
+let isPaused = false; // New feature: Pause
+
+// Sound effects
+const brickHitSound = new Audio("sounds/brick_hit.mp3");
+const paddleHitSound = new Audio("sounds/paddle_hit.mp3");
+const powerUpSound = new Audio("sounds/power_up.mp3");
+const gameOverSound = new Audio("sounds/game_over.mp3");
 
 // Initialize bricks
 function initializeBricks() {
@@ -81,6 +88,7 @@ function createPowerUp() {
 }
 
 function applyPowerUp(powerUp) {
+    powerUpSound.play();
     if (powerUp.type === "expandPaddle") {
         paddleWidth += 20;
     } else if (powerUp.type === "extraLife") {
@@ -128,6 +136,8 @@ function keyDownHandler(e) {
         rightPressed = true;
     } else if (e.key === "Left" || e.key === "ArrowLeft") {
         leftPressed = true;
+    } else if (e.key === "p" || e.key === "P") {
+        isPaused = !isPaused;
     }
 }
 
@@ -147,6 +157,7 @@ function collisionDetection() {
             if (b.status === 1) {
                 if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
                     dy = -dy;
+                    brickHitSound.play();
                     b.hits -= 1;
                     if (b.hits <= 0) {
                         b.status = 0;
@@ -317,6 +328,7 @@ function drawLevel() {
 
 // Update game state and draw
 function draw() {
+    if (isPaused) return; // Pause the game
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBricks();
     drawBall();
@@ -337,9 +349,11 @@ function draw() {
     } else if (y + dy > canvas.height - ballRadius) {
         if (x > paddleX && x < paddleX + paddleWidth) {
             dy = -dy;
+            paddleHitSound.play();
         } else {
             lives--;
             if (!lives) {
+                gameOverSound.play();
                 alert("Game Over");
                 document.location.reload();
             } else {
