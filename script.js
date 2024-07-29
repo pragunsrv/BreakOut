@@ -7,6 +7,7 @@ let x = canvas.width / 2;
 let y = canvas.height - 30;
 let dx = 2;
 let dy = -2;
+const ballSpeedIncrement = 0.1; // Increment speed after every few bricks
 
 // Paddle properties
 const paddleHeight = 10;
@@ -23,24 +24,32 @@ const brickHeight = 20;
 const brickPadding = 10;
 const brickOffsetTop = 30;
 const brickOffsetLeft = 30;
+const brickColors = ["#0095DD", "#FF5733", "#33FF57", "#FF33A1", "#33A1FF"];
+let brickTypes = [];
 
 const bricks = [];
 for (let c = 0; c < brickColumnCount; c++) {
     bricks[c] = [];
     for (let r = 0; r < brickRowCount; r++) {
-        bricks[c][r] = { x: 0, y: 0, status: 1, color: getRandomColor() };
+        const color = getRandomColor();
+        const type = getRandomBrickType();
+        bricks[c][r] = { x: 0, y: 0, status: 1, color: color, type: type };
     }
 }
 
 function getRandomColor() {
-    const colors = ["#0095DD", "#FF5733", "#33FF57", "#FF33A1", "#33A1FF"];
-    return colors[Math.floor(Math.random() * colors.length)];
+    return brickColors[Math.floor(Math.random() * brickColors.length)];
+}
+
+function getRandomBrickType() {
+    const types = ["normal", "explosive", "doubleScore"];
+    return types[Math.floor(Math.random() * types.length)];
 }
 
 // Power-up properties
 const powerUpRadius = 10;
 let powerUps = [];
-const powerUpTypes = ["expandPaddle", "extraLife", "slowBall"];
+const powerUpTypes = ["expandPaddle", "extraLife", "slowBall", "speedBall"];
 
 function createPowerUp() {
     const randomColumn = Math.floor(Math.random() * brickColumnCount);
@@ -63,11 +72,13 @@ function applyPowerUp(powerUp) {
     if (powerUp.type === "expandPaddle") {
         paddleWidth += 20;
     } else if (powerUp.type === "extraLife") {
-        // Increase player lives
         lives += 1;
     } else if (powerUp.type === "slowBall") {
         dx *= 0.8;
         dy *= 0.8;
+    } else if (powerUp.type === "speedBall") {
+        dx *= 1.2;
+        dy *= 1.2;
     }
 }
 
@@ -106,6 +117,9 @@ function collisionDetection() {
                     dy = -dy;
                     b.status = 0;
                     score += 10;
+                    if (b.type === "explosive") {
+                        destroyNearbyBricks(c, r);
+                    }
                     if (Math.random() < 0.1) { // 10% chance to spawn a power-up
                         createPowerUp();
                     }
@@ -120,6 +134,20 @@ function collisionDetection() {
                 y > powerUp.y - powerUp.radius && y < powerUp.y + powerUp.radius) {
                 applyPowerUp(powerUp);
                 powerUp.status = 0;
+            }
+        }
+    }
+}
+
+function destroyNearbyBricks(c, r) {
+    for (let i = c - 1; i <= c + 1; i++) {
+        for (let j = r - 1; j <= r + 1; j++) {
+            if (i >= 0 && i < brickColumnCount && j >= 0 && j < brickRowCount) {
+                const brick = bricks[i][j];
+                if (brick.status === 1) {
+                    brick.status = 0;
+                    score += 10;
+                }
             }
         }
     }
@@ -184,6 +212,8 @@ function getPowerUpColor(type) {
             return "#FF6347";
         case "slowBall":
             return "#32CD32";
+        case "speedBall":
+            return "#1E90FF";
         default:
             return "#FFFFFF";
     }
@@ -226,8 +256,8 @@ function draw() {
             dy = -dy;
         } else {
             lives--;
-            if (lives <= 0) {
-                alert("GAME OVER");
+            if (!lives) {
+                alert("Game Over");
                 document.location.reload();
             } else {
                 resetBall();
@@ -247,6 +277,7 @@ function draw() {
     requestAnimationFrame(draw);
 }
 
+// Reset ball position and speed
 function resetBall() {
     x = canvas.width / 2;
     y = canvas.height - 30;
@@ -254,9 +285,11 @@ function resetBall() {
     dy = -2;
 }
 
+// Reset paddle position and size
 function resetPaddle() {
     paddleWidth = 75;
     paddleX = (canvas.width - paddleWidth) / 2;
 }
 
+// Start the game
 draw();
