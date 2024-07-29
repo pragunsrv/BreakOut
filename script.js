@@ -308,6 +308,13 @@ function drawBallTrail() {
     }
 }
 
+// Draw levels
+function drawLevel() {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#FFF";
+    ctx.fillText("Level: " + level, canvas.width / 2 - 30, 20);
+}
+
 // Update game state and draw
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -319,6 +326,7 @@ function draw() {
     drawBallTrail();
     drawScore();
     drawLives();
+    drawLevel();
     collisionDetection();
 
     if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
@@ -365,6 +373,34 @@ function resetBall() {
 function resetPaddle() {
     paddleWidth = 75;
     paddleX = (canvas.width - paddleWidth) / 2;
+}
+
+// Level up
+function levelUp() {
+    if (level < maxLevels) {
+        level++;
+        dx *= 1.2;
+        dy *= 1.2;
+        initializeBricks();
+    } else {
+        alert("You win! All levels completed!");
+        document.location.reload();
+    }
+}
+
+// Check level completion
+function checkLevelCompletion() {
+    let bricksLeft = 0;
+    for (let c = 0; c < brickColumnCount; c++) {
+        for (let r = 0; r < brickRowCount; r++) {
+            if (bricks[c][r].status === 1) {
+                bricksLeft++;
+            }
+        }
+    }
+    if (bricksLeft === 0) {
+        levelUp();
+    }
 }
 
 // Start the game
